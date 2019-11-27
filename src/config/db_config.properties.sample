@@ -1,0 +1,5 @@
+#MYSQL config
+mysql_driver=com.mysql.cj.jdbc.Driver
+mysql_url=jdbc:mysql://localhost:3306/data_warehouse?useSSL=false&serverTimezone=UTC
+mysql_user=
+mysql_password=
