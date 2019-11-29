@@ -46,7 +46,7 @@ public class MovieFileReader implements Iterator<Movie>,AutoCloseable {
                     StringBuilder stringBuilder=new StringBuilder();
                     do{
                         read_re=is.read();
-                    }while(read_re!=-1&&Character.isSpaceChar(read_re));
+                    }while(read_re!=-1&&Character.isWhitespace(read_re));
                     if(read_re==-1){
                         return null;
                     }

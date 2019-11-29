@@ -4,3 +4,4 @@ DataInsert.iml
 /src/config/db_config.properties
 !/src/config/*.sample
 *.json
+error.log

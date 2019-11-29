@@ -1,12 +1,17 @@
 package com.tongji.zhou.Entity;
 
 public class Product {
+    private Integer id;
     private String format;
     private String price;
-    private String asin;
+    private String productId;
 
-    public String getAsin() {
-        return asin;
+    public Integer getId() {
+        return id;
+    }
+
+    public String getProductId() {
+        return productId;
     }
 
     public String getFormat() {
@@ -17,8 +22,8 @@ public class Product {
         return price;
     }
 
-    public void setAsin(String asin) {
-        this.asin = asin;
+    public void setProductId(String productId) {
+        this.productId = productId;
     }
 
     public void setFormat(String format) {
@@ -28,4 +33,5 @@ public class Product {
     public void setPrice(String price) {
         this.price = price;
     }
+
 }

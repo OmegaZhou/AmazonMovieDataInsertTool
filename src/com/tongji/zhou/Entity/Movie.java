@@ -10,7 +10,12 @@ public class Movie {
     private Double ranking;
     private ArrayList<String> starrings;
     private ArrayList<String> supportingActors;
+    private Integer runtime;
     private String title;
+    private String releaseDate;
+    private Integer releaseMonth;
+    private Integer releaseDay;
+    private Integer releaseYear;
 
     public ArrayList<Product> getProducts() {
         return products;
@@ -42,6 +47,26 @@ public class Movie {
 
     public String getTitle() {
         return title;
+    }
+
+    public Integer getRuntime() {
+        return runtime;
+    }
+
+    public Integer getReleaseDay() {
+        return releaseDay;
+    }
+
+    public Integer getReleaseMonth() {
+        return releaseMonth;
+    }
+
+    public Integer getReleaseYear() {
+        return releaseYear;
+    }
+
+    public String getReleaseDate() {
+        return releaseDate;
     }
 
     public void setActors(ArrayList<String> actors) {
@@ -76,5 +101,24 @@ public class Movie {
         this.title = title;
     }
 
+    public void setRuntime(Integer runtime) {
+        this.runtime = runtime;
+    }
+
+    public void setReleaseDate(String releaseDate) {
+        this.releaseDate = releaseDate;
+    }
+
+    public void setReleaseDay(Integer releaseDay) {
+        this.releaseDay = releaseDay;
+    }
+
+    public void setReleaseYear(Integer releaseYear) {
+        this.releaseYear = releaseYear;
+    }
+
+    public void setReleaseMonth(Integer releaseMonth) {
+        this.releaseMonth = releaseMonth;
+    }
 
 }
