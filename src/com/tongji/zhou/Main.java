@@ -11,7 +11,8 @@ public class Main {
 
     public static void main(String[] args) {
 	// write your code here
-        MovieFileReader movieFileReader=new MovieFileReader("a.json");
+        String path=args.length==0?"a.json":args[0];
+        MovieFileReader movieFileReader=new MovieFileReader(path);
         SqlInsertTool sqlInsertTool=new SqlInsertTool(SqlInsertTool.DB_TYPE.MYSQL);
         while(movieFileReader.hasNext()){
             Movie movie=movieFileReader.next();
