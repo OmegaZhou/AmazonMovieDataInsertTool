@@ -14,6 +14,7 @@ import java.util.Map;
 
 
 public class SqlInsertTool{
+    private int movie_count=1;
     public enum DB_TYPE{
       MYSQL("mysql"), HIVE("hive");
       private final String db_name;
@@ -73,6 +74,8 @@ public class SqlInsertTool{
                 InsertActorAndDirectorCorporation(sqlSession,movie);
                 InsertMovieFact(sqlSession,movieFact);
                 sqlSession.commit();
+                System.out.println("Save movie"+movie_count);
+                ++movie_count;
             }
         }catch (Exception e){
             ErrorHandler.error(e);

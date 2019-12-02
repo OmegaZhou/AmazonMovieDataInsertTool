@@ -2,6 +2,7 @@ package com.tongji.zhou;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -21,8 +22,8 @@ public class ErrorHandler {
         }catch (IOException err){
             return;
         }
-        try(FileOutputStream out =new FileOutputStream(error_file)){
-            out.write(message.getBytes());
+        try(FileWriter out =new FileWriter(error_file,true)){
+            out.append(message);
         }catch (Exception err){
             return;
         }
