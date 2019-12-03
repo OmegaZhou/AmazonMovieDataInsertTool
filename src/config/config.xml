@@ -17,6 +17,12 @@
         
     </environments>
     <mappers>
-        <package name="com.tongji.zhou.Mapper"/>
+        <mapper resource="config/PersonSqlMapper.xml"></mapper>
+        <mapper class="com.tongji.zhou.Mapper.ActorAndDirectorSqlMapper"/>
+        <mapper class="com.tongji.zhou.Mapper.MovieFactSqlMapper"/>
+        <mapper class="com.tongji.zhou.Mapper.ProductSqlMapper"/>
+        <mapper class="com.tongji.zhou.Mapper.GenreSqlMapper"/>
+        <mapper class="com.tongji.zhou.Mapper.DateSqlMapper"/>
+        <mapper class="com.tongji.zhou.Mapper.RankingSqlMapper"/>
     </mappers>
 </configuration>

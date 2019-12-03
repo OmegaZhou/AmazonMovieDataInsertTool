@@ -4,6 +4,7 @@ public class Date {
     private Integer date_id;
     private Integer year;
     private Integer month;
+    private Integer day;
     private Integer weekday;
     private String movies;
     private String date_str;
@@ -14,6 +15,10 @@ public class Date {
 
     public Integer getMonth() {
         return month;
+    }
+
+    public Integer getDay() {
+        return day;
     }
 
     public String getMovies() {
@@ -50,5 +55,9 @@ public class Date {
 
     public void setDate_str(String date_str) {
         this.date_str = date_str;
+    }
+
+    public void setDay(Integer day) {
+        this.day = day;
     }
 }

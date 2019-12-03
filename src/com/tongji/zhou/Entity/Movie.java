@@ -15,6 +15,7 @@ public class Movie {
     private String releaseDate;
     private Integer releaseMonth;
     private Integer releaseDay;
+    private Integer releaseWeekDay;
     private Integer releaseYear;
 
     public ArrayList<Product> getProducts() {
@@ -55,6 +56,10 @@ public class Movie {
 
     public Integer getReleaseDay() {
         return releaseDay;
+    }
+
+    public Integer getReleaseWeekDay() {
+        return releaseWeekDay;
     }
 
     public Integer getReleaseMonth() {
@@ -121,4 +126,7 @@ public class Movie {
         this.releaseMonth = releaseMonth;
     }
 
+    public void setReleaseWeekDay(Integer releaseWeekDay) {
+        this.releaseWeekDay = releaseWeekDay;
+    }
 }

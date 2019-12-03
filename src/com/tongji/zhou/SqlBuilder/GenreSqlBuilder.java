@@ -17,9 +17,12 @@ public class GenreSqlBuilder {
     public static String GenreInsertSqlBuilder(Map<String,String> para){
         return new SQL(){{
            INSERT_INTO("genre");
-            for(Map.Entry<String,String> item:para.entrySet()){
-                VALUES("`"+item.getKey()+"`","'"+item.getValue()+"'");
-            }
+           if(para.isEmpty()){
+               VALUES("","");
+           }
+           for(Map.Entry<String,String> item:para.entrySet()){
+               VALUES("`"+item.getKey()+"`","'"+item.getValue()+"'");
+           }
         }}.toString();
     }
 }

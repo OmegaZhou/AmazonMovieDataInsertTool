@@ -25,6 +25,7 @@ public class Corporation {
                 this.p2=p1;
             }
         }
+        this.movies=p1.getMovies();
     }
 
     public Integer getId1() {

@@ -41,4 +41,6 @@ public class Person {
     public Person(PersonType type){
         this.type=type;
     }
+    public Person(){
+    }
 }

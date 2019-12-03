@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tongji.zhou.Mapper.CorporationSqlMapper">
+    <insert id="InsertActorCorporations" parameterType="java.util.List">
+        insert into actor_corporation(actor_name1,actor_name2,actor_id1,actor_id2,count,movies)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.name1},#{item.name2},#{item.id1},#{item.id2},1,CONCAT('|',#{item.movies},'|')
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        count=count+1,
+        movies=CONCAT(movies,VALUES(movies),'|')
+    </insert>
+    <insert id="InsertActorDirectorCorporations" parameterType="java.util.List">
+        insert into director_actor_corporation(actor_name,director_name,actor_id,director_id,count,movies)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.name1},#{item.name2},#{item.id1},#{item.id2},1,CONCAT('|',#{item.movies},'|')
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        count=count+1,
+        movies=CONCAT(movies,VALUES(movies),'|')
+    </insert>
+</mapper>

@@ -1,6 +1,7 @@
 package com.tongji.zhou;
 
 import com.tongji.zhou.Entity.*;
+import com.tongji.zhou.Entity.Date;
 import com.tongji.zhou.Mapper.*;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
@@ -8,9 +9,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 public class SqlInsertTool{
@@ -43,10 +42,6 @@ public class SqlInsertTool{
         SqlSession sqlSession=sqlSessionFactory.openSession(false);
         try{
             GenreSqlMapper genreSqlMapper=sqlSession.getMapper(GenreSqlMapper.class);
-            Map<String,Object> fields=genreSqlMapper.GetTableFields();
-            if(fields==null){
-                genreSqlMapper.InitInsert();
-            }
             sqlSession.commit();
         }catch (Exception e){
             ErrorHandler.error(e);
@@ -113,7 +108,8 @@ public class SqlInsertTool{
         date.setDate_str(movie.getReleaseDate());
         date.setYear(movie.getReleaseYear());
         date.setMonth(movie.getReleaseMonth());
-        date.setWeekday(movie.getReleaseDay());
+        date.setWeekday(movie.getReleaseWeekDay());
+        date.setDay(movie.getReleaseDay());
         date.setMovies(movie.getTitle());
         DateSqlMapper dateSqlMapper=sqlSession.getMapper(DateSqlMapper.class);
         Integer date_id=dateSqlMapper.GetDateId(date);
@@ -128,23 +124,25 @@ public class SqlInsertTool{
 
     private Integer InsertGenre(SqlSession sqlSession,Movie movie){
         GenreSqlMapper genreSqlMapper=sqlSession.getMapper(GenreSqlMapper.class);
-        Map<String,Object>fields=genreSqlMapper.GetTableFields();
+        List<String> fields=genreSqlMapper.GetTableFields();
         fields.remove("genre_id");
-        for(String key:fields.keySet()){
-            fields.put(key,"N");
+        Map<String,Object> condition=new HashMap<>();
+        for(String key:fields){
+            condition.put(key,"N");
         }
         List<String>genres =movie.getGenres();
         for(String genre:genres){
-            if(!fields.containsKey(genre)){
+            if(!condition.containsKey(genre)){
                 genreSqlMapper.AddNewGenre(genre);
                 genreSqlMapper.CreateNewIndex(genre);
+                genreSqlMapper.InsertGenreName(genre);
             }
-            fields.put(genre,"Y");
+            condition.put(genre,"Y");
         }
-        Integer genre_id=genreSqlMapper.GetGenreId(fields);
+        Integer genre_id=genreSqlMapper.GetGenreId(condition);
         if(genre_id==null){
-            genreSqlMapper.InsertGenre(fields);
-            genre_id=Integer.parseInt(fields.get("genre_id").toString());
+            genreSqlMapper.InsertGenre(condition);
+            genre_id=Integer.parseInt(condition.get("genre_id").toString());
         }
         return genre_id;
     }
@@ -191,96 +189,151 @@ public class SqlInsertTool{
         }else{
             StringBuilder stringBuilder=new StringBuilder("|");
             List<Integer> ids=new ArrayList<>();
-            Person person=new Person(type);
-            person.setMovies(movie.getTitle());
+            List<Person> persons=new ArrayList<>();
+
             for(int i=0;i<names.size();++i){
+                Person person=new Person(type);
+                person.setMovies(movie.getTitle());
                 String name=names.get(i);
                 stringBuilder.append(name);
                 stringBuilder.append("|");
                 person.setName(name);
-                ids.add(InsertPerson(sqlSession,person));
+                persons.add(person);
             }
 
+            ids=InsertPersons(sqlSession,persons);
+
             ActorAndDirectorSqlMapper actorAndDirectorSqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-            PersonGroup group=new PersonGroup(type);
-            group.setNames(stringBuilder.toString());
-            group.setCount(ids.size());
+            List<PersonGroup> personGroups=new ArrayList<>();
             for(int i=0;i<ids.size();++i){
+                PersonGroup group=new PersonGroup(type);
+                group.setNames(stringBuilder.toString());
+                group.setCount(ids.size());
                 group.setPerson_id(ids.get(i));
                 if(i==0){
                     actorAndDirectorSqlMapper.CreateNewGroup(group);
+                    group_id=group.getId();
                 }else{
-                    actorAndDirectorSqlMapper.InsertGroup(group);
+                    group.setId(group_id);
+                    personGroups.add(group);
                 }
             }
-            group_id=group.getId();
+            if(!personGroups.isEmpty()){
+                actorAndDirectorSqlMapper.InsertGroups(personGroups);
+            }
+
         }
         return group_id;
     }
 
 
-    private Integer InsertPerson(SqlSession sqlSession,Person person){
-        ActorAndDirectorSqlMapper personSqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-        Integer person_id=personSqlMapper.GetPersonId(person);
-        if(person_id==null){
-            personSqlMapper.InsertPerson(person);
-            person_id=person.getId();
-        }else{
-            personSqlMapper.UpdatePerson(person);
-        }
-        return person_id;
-    }
-
     private void InsertActorCorporation(SqlSession sqlSession,Movie movie){
-        if(movie.getActors()==null){
+        if(movie.getActors()==null||movie.getActors().size()<=1){
             return;
         }
         List<String> actors=movie.getActors();
-        Person p1=new Person(PersonType.ACTOR);
-        Person p2=new Person(PersonType.ACTOR);
-        p1.setMovies(movie.getTitle());
-        p2.setMovies(movie.getTitle());
+        List<Person> personList=new LinkedList<>();
+        for(String i:actors){
+            Person person=new Person(PersonType.ACTOR);
+            person.setName(i);
+            personList.add(person);
+        }
+
         ActorAndDirectorSqlMapper sqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-        for(int i=0;i<actors.size();++i){
-            p1.setName(actors.get(i));
-            for(int j=i+1;j<actors.size();++j){
-                p2.setName(actors.get(j));
+        CorporationSqlMapper corporationSqlMapper=sqlSession.getMapper(CorporationSqlMapper.class);
+        personList=sqlMapper.GetPersonIds(personList);
+        List<Corporation> corporations=new LinkedList<>();
+        for(int i=0;i<personList.size();++i){
+            Person p1=new Person(PersonType.ACTOR);
+            p1.setName(personList.get(i).getName());
+            p1.setId(personList.get(i).getId());
+            p1.setMovies(movie.getTitle());
+            for(int j=i+1;j<personList.size();++j){
+                Person p2=new Person(PersonType.ACTOR);
+                p2.setMovies(movie.getTitle());
+                p2.setName(personList.get(j).getName());
+                p2.setId(personList.get(j).getId());
                 Corporation corporation=new Corporation(p1,p2);
-                if(sqlMapper.CheckActorCorporation(corporation)!=null){
-                    sqlMapper.UpdateActorCorporation(corporation);
-                }else{
-                    corporation.setId1(sqlMapper.GetPersonId(corporation.getP1()));
-                    corporation.setId2(sqlMapper.GetPersonId(corporation.getP2()));
-                    sqlMapper.InsertActorCorporation(corporation);
-                }
+                corporations.add(corporation);
             }
         }
+        corporationSqlMapper.InsertActorCorporations(corporations);
     }
 
     private void InsertActorAndDirectorCorporation(SqlSession sqlSession,Movie movie){
-        if(movie.getActors()==null||movie.getDirectors()==null){
+        if(movie.getActors()==null||movie.getDirectors()==null||movie.getActors().isEmpty()||movie.getDirectors().isEmpty()){
             return;
         }
         List<String> actors=movie.getActors();
         List<String> directors=movie.getDirectors();
-        Person p1=new Person(PersonType.ACTOR);
-        Person p2=new Person(PersonType.DIRECTOR);
-        p1.setMovies(movie.getTitle());
-        p2.setMovies(movie.getTitle());
+        List<Person> actorList=new LinkedList<>();
+        List<Person> directorList=new LinkedList<>();
+        for(String i:actors){
+            Person person=new Person(PersonType.ACTOR);
+            person.setName(i);
+            actorList.add(person);
+        }
+        for(String i:directors){
+            Person person=new Person(PersonType.DIRECTOR);
+            person.setName(i);
+            directorList.add(person);
+        }
+
+
+
         ActorAndDirectorSqlMapper sqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-        for(int i=0;i<actors.size();++i){
-            p1.setName(actors.get(i));
-            for(int j=0;j<directors.size();++j){
-                p2.setName(directors.get(j));
+        CorporationSqlMapper corporationSqlMapper=sqlSession.getMapper(CorporationSqlMapper.class);
+        actorList=sqlMapper.GetPersonIds(actorList);
+        directorList=sqlMapper.GetPersonIds(directorList);
+        List<Corporation> corporations=new ArrayList<>();
+        for(int i=0;i<actorList.size();++i){
+            Person p1=new Person(PersonType.ACTOR);
+            p1.setName(actorList.get(i).getName());
+            p1.setId(actorList.get(i).getId());
+            p1.setMovies(movie.getTitle());
+            for(int j=0;j<directorList.size();++j){
+                Person p2=new Person(PersonType.DIRECTOR);
+                p2.setName(directorList.get(j).getName());
+                p2.setId(directorList.get(j).getId());
+                p2.setMovies(movie.getTitle());
                 Corporation corporation=new Corporation(p1,p2);
-                if(sqlMapper.CheckDirectorActorCorporation(corporation)!=null){
-                    sqlMapper.UpdateDirectorActorCorporation(corporation);
-                }else{
-                    corporation.setId1(sqlMapper.GetPersonId(corporation.getP1()));
-                    corporation.setId2(sqlMapper.GetPersonId(corporation.getP2()));
-                    sqlMapper.InsertDirectorActorCorporation(corporation);
-                }
+                corporations.add(corporation);
             }
         }
+        corporationSqlMapper.InsertActorDirectorCorporations(corporations);
+    }
+
+    private List<Integer> InsertPersons(SqlSession sqlSession,List<Person> personList){
+        if(personList==null||personList.isEmpty()){
+            return new ArrayList<>();
+        }
+        List<Integer> result=new ArrayList<>();
+        ActorAndDirectorSqlMapper personMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
+        List<Person> ids=personMapper.GetPersonIds(personList);
+        Set<String> contain_ids=new HashSet<>();
+        for(Person person:ids){
+            result.add(person.getId());
+            contain_ids.add(person.getName().toLowerCase());
+            person.setMovies(personList.get(0).getMovies());
+        }
+        List<Person> insert_ids=new ArrayList<>();
+        List<Person> update_ids=new ArrayList<>();
+        for(Person person:personList){
+            if(!contain_ids.contains(person.getName().toLowerCase())){
+                insert_ids.add(person);
+            }else{
+                update_ids.add(person);
+            }
+        }
+        if(!insert_ids.isEmpty()){
+            personMapper.InsertPersons(insert_ids);
+        }
+        if(!update_ids.isEmpty()){
+            personMapper.UpdatePersons(update_ids);
+        }
+        for(Person person:insert_ids){
+            result.add(person.getId());
+        }
+        return result;
     }
 }

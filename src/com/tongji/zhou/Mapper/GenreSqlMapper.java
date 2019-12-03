@@ -3,15 +3,16 @@ package com.tongji.zhou.Mapper;
 import com.tongji.zhou.SqlBuilder.GenreSqlBuilder;
 import org.apache.ibatis.annotations.*;
 
+import java.util.List;
 import java.util.Map;
 
 public interface GenreSqlMapper {
-    @Insert("insert into genre() values()")
-    Integer InitInsert();
 
-    @Select("select * from genre limit 1")
-    @ResultType(Map.class)
-    Map<String,Object> GetTableFields();
+    @Select("select genre_name from genre_names")
+    List<String> GetTableFields();
+
+    @Insert("insert into genre_names values(#{name})")
+    Integer InsertGenreName(@Param("name") String name);
 
     @SelectProvider(value = GenreSqlBuilder.class,method = "GenreSelectSqlBuilder")
     Integer GetGenreId(Map<String,Object> para);
