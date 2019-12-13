@@ -1,6 +1,9 @@
 package com.tongji.zhou.Entity;
 
-public class Person {
+import java.util.*;
+
+public class Person implements Comparable<Person> {
+
     private Integer id;
     private PersonType type;
     private String name;
@@ -43,4 +46,10 @@ public class Person {
     }
     public Person(){
     }
+
+    @Override
+    public int compareTo(Person obj) {
+        return this.name.toLowerCase().compareTo(obj.name.toLowerCase());
+    }
+
 }

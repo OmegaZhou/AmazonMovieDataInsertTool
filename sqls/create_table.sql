@@ -161,7 +161,7 @@ DROP TABLE IF EXISTS `data_warehouse`.`actors_group` ;
 CREATE TABLE IF NOT EXISTS `data_warehouse`.`actors_group` (
   `actors_group_id` INT NOT NULL AUTO_INCREMENT,
   `actor_id` INT NOT NULL,
-  `names` VARCHAR(3000) NULL DEFAULT NULL,
+  `names` VARCHAR(6000) NULL DEFAULT NULL,
   `count` INT NULL DEFAULT NULL,
   PRIMARY KEY (`actors_group_id`, `actor_id`),
   INDEX `actor_id_FK_idx` (`actor_id` ASC) VISIBLE,
@@ -182,7 +182,7 @@ DROP TABLE IF EXISTS `data_warehouse`.`starrings_group` ;
 CREATE TABLE IF NOT EXISTS `data_warehouse`.`starrings_group` (
   `starrings_group_id` INT NOT NULL AUTO_INCREMENT,
   `starring_id` INT NOT NULL,
-  `names` VARCHAR(3000) NULL,
+  `names` VARCHAR(6000) NULL,
   `count` INT NULL DEFAULT 0,
   PRIMARY KEY (`starrings_group_id`, `starring_id`),
   INDEX `starring_id_FK_idx` (`starring_id` ASC) VISIBLE,
@@ -203,7 +203,7 @@ DROP TABLE IF EXISTS `data_warehouse`.`supportings_group` ;
 CREATE TABLE IF NOT EXISTS `data_warehouse`.`supportings_group` (
   `supportings_group_id` INT NOT NULL AUTO_INCREMENT,
   `supporting_id` INT NOT NULL,
-  `names` VARCHAR(3000) NULL,
+  `names` VARCHAR(6000) NULL,
   `count` INT NULL DEFAULT 0,
   PRIMARY KEY (`supportings_group_id`, `supporting_id`),
   INDEX `supporting_id_FK_idx` (`supporting_id` ASC) INVISIBLE,

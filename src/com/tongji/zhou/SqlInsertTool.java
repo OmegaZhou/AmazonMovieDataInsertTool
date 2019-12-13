@@ -190,7 +190,6 @@ public class SqlInsertTool{
             StringBuilder stringBuilder=new StringBuilder("|");
             List<Integer> ids=new ArrayList<>();
             List<Person> persons=new ArrayList<>();
-
             for(int i=0;i<names.size();++i){
                 Person person=new Person(type);
                 person.setMovies(movie.getTitle());
@@ -200,7 +199,7 @@ public class SqlInsertTool{
                 person.setName(name);
                 persons.add(person);
             }
-
+            persons=SqlInsertTool.FilterDuplicatePerson(persons);
             ids=InsertPersons(sqlSession,persons);
 
             ActorAndDirectorSqlMapper actorAndDirectorSqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
@@ -232,13 +231,17 @@ public class SqlInsertTool{
             return;
         }
         List<String> actors=movie.getActors();
-        List<Person> personList=new LinkedList<>();
+        /*List<Person> personList= new LinkedList<>();
         for(String i:actors){
             Person person=new Person(PersonType.ACTOR);
             person.setName(i);
             personList.add(person);
         }
-
+        personList=SqlInsertTool.FilterDuplicatePerson(personList);*/
+        List<Person> personList=SqlInsertTool.GetPersons(actors,PersonType.ACTOR);
+        if(personList.size()<=1){
+            return;
+        }
         ActorAndDirectorSqlMapper sqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
         CorporationSqlMapper corporationSqlMapper=sqlSession.getMapper(CorporationSqlMapper.class);
         personList=sqlMapper.GetPersonIds(personList);
@@ -266,19 +269,10 @@ public class SqlInsertTool{
         }
         List<String> actors=movie.getActors();
         List<String> directors=movie.getDirectors();
-        List<Person> actorList=new LinkedList<>();
-        List<Person> directorList=new LinkedList<>();
-        for(String i:actors){
-            Person person=new Person(PersonType.ACTOR);
-            person.setName(i);
-            actorList.add(person);
-        }
-        for(String i:directors){
-            Person person=new Person(PersonType.DIRECTOR);
-            person.setName(i);
-            directorList.add(person);
-        }
 
+        List<Person> actorList=SqlInsertTool.GetPersons(actors,PersonType.ACTOR);
+
+        List<Person> directorList=SqlInsertTool.GetPersons(directors,PersonType.DIRECTOR);
 
 
         ActorAndDirectorSqlMapper sqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
@@ -335,5 +329,28 @@ public class SqlInsertTool{
             result.add(person.getId());
         }
         return result;
+    }
+    private static List<Person> FilterDuplicatePerson(List<Person> personList){
+        Set<Person> set=new TreeSet<>();
+        List<Person> result=new ArrayList<>();
+        for(Person i:personList){
+            if(set.contains(i)){
+                continue;
+            }else{
+                set.add(i);
+                result.add(i);
+            }
+        }
+        return result;
+    }
+    private static List<Person> GetPersons(List<String> person_names,PersonType type){
+        List<Person> personList=new LinkedList<>();
+        for(String i:person_names){
+            Person person=new Person(type);
+            person.setName(i);
+            personList.add(person);
+        }
+        personList=SqlInsertTool.FilterDuplicatePerson(personList);
+        return FilterDuplicatePerson(personList);
     }
 }

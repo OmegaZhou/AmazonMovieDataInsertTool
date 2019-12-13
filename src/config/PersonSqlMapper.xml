@@ -12,7 +12,7 @@
         </foreach>
         ON DUPLICATE KEY UPDATE
         count=count+1,
-        movies=CONCAT(movies,VALUES(movies),'|')
+        movies=CONCAT(movies,SUBSTRING_INDEX(VALUES(movies),'|',-2))
     </insert>
     <insert id="InsertActorDirectorCorporations" parameterType="java.util.List">
         insert into director_actor_corporation(actor_name,director_name,actor_id,director_id,count,movies)
@@ -24,6 +24,6 @@
         </foreach>
         ON DUPLICATE KEY UPDATE
         count=count+1,
-        movies=CONCAT(movies,VALUES(movies),'|')
+        movies=CONCAT(movies,SUBSTRING_INDEX(VALUES(movies),'|',-2))
     </insert>
 </mapper>

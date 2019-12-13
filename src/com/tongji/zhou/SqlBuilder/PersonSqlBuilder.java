@@ -4,10 +4,10 @@ import com.tongji.zhou.Entity.Person;
 import com.tongji.zhou.Entity.PersonGroup;
 import org.apache.ibatis.jdbc.SQL;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class PersonSqlBuilder {
+
     public static String GetPersonIds(Map<Integer,List<Person>> person_map){
         List<Person> persons=person_map.get("list");
         if(persons==null ||persons.isEmpty()){
@@ -30,6 +30,7 @@ public class PersonSqlBuilder {
         if(persons==null ||persons.isEmpty()){
             return null;
         }
+
         return new SQL(){{
             Person tmp=persons.get(0);
             UPDATE("`"+tmp.getRole()+"`");

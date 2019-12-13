@@ -46,13 +46,13 @@ public class MovieFileReader implements Iterator<Movie>,AutoCloseable {
                     StringBuilder stringBuilder=new StringBuilder();
                     do{
                         read_re=is.read();
-                    }while(read_re!=-1&&Character.isWhitespace(read_re));
+                    }while(read_re!=-1&&(char)read_re!='{');
                     if(read_re==-1){
                         return null;
                     }
-                    if((char)read_re!='{'){
+                    /*if((char)read_re!='{'){
                         throw new Exception("格式错误");
-                    }
+                    }*/
                     do{
                         ch=(char)read_re;
                         if(ch=='{'){
