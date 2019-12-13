@@ -365,7 +365,7 @@ DROP TABLE IF EXISTS `data_warehouse`.`review` ;
 
 CREATE TABLE IF NOT EXISTS `data_warehouse`.`review` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `product_id` INT NULL,
+  `asin` VARCHAR(50) NULL,
   `userId` VARCHAR(50) NULL DEFAULT NULL,
   `profileName` VARCHAR(50) NULL DEFAULT NULL,
   `helpfulness` VARCHAR(50) NULL DEFAULT NULL,
