@@ -8,11 +8,13 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
-import java.io.InputStream;
+import java.io.*;
 import java.util.*;
 
 
 public class SqlInsertTool{
+    static private final int MAX_GROUP_NUM=2000;
+    static private final int MAX_PACKET=15*1024*1024;
     private int movie_count=1;
     public enum DB_TYPE{
       MYSQL("mysql"), HIVE("hive");
@@ -133,9 +135,9 @@ public class SqlInsertTool{
         List<String>genres =movie.getGenres();
         for(String genre:genres){
             if(!condition.containsKey(genre)){
+                genreSqlMapper.InsertGenreName(genre);
                 genreSqlMapper.AddNewGenre(genre);
                 genreSqlMapper.CreateNewIndex(genre);
-                genreSqlMapper.InsertGenreName(genre);
             }
             condition.put(genre,"Y");
         }
@@ -151,20 +153,32 @@ public class SqlInsertTool{
         if(movie.getProducts()==null||movie.getProducts().isEmpty()){
             return null;
         }
-        List<Product> products=movie.getProducts();
-        ProductGroup productGroup=new ProductGroup();
+        List<Product> products=SqlInsertTool.FilterDuplicateValue(movie.getProducts());
         ProductSqlMapper productSqlMapper=sqlSession.getMapper(ProductSqlMapper.class);
+        productSqlMapper.InsertProducts(products);
+        List<ProductGroup> productGroups=new ArrayList<>();
+        Integer product_group_id=null;
         for(int i=0;i<products.size();++i){
             Product product=products.get(i);
-            productSqlMapper.InsertProduct(product);
+            ProductGroup productGroup=new ProductGroup();
             productGroup.setProduct_id(product.getId());
             if(i==0){
                 productSqlMapper.CreateNewProductGroup(productGroup);
+                product_group_id=productGroup.getProduct_group_id();
             }else{
-                productSqlMapper.InsertProductGroup(productGroup);
+                productGroup.setProduct_group_id(product_group_id);
+                productGroups.add(productGroup);
+                if(productGroups.size()>=SqlInsertTool.MAX_GROUP_NUM){
+                    productSqlMapper.InsertProductGroups(productGroups);
+                    productGroups.clear();
+                }
+
             }
         }
-        return productGroup.getProduct_group_id();
+        if(!productGroups.isEmpty()){
+            productSqlMapper.InsertProductGroups(productGroups);
+        }
+        return product_group_id;
     }
 
     private Integer InsertPersonGroup(SqlSession sqlSession,Movie movie,PersonType type){
@@ -199,7 +213,7 @@ public class SqlInsertTool{
                 person.setName(name);
                 persons.add(person);
             }
-            persons=SqlInsertTool.FilterDuplicatePerson(persons);
+            persons=SqlInsertTool.FilterDuplicateValue(persons);
             ids=InsertPersons(sqlSession,persons);
 
             ActorAndDirectorSqlMapper actorAndDirectorSqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
@@ -215,6 +229,11 @@ public class SqlInsertTool{
                 }else{
                     group.setId(group_id);
                     personGroups.add(group);
+                    if(personGroups.size()>=SqlInsertTool.MAX_GROUP_NUM||
+                            (group.getNames().getBytes().length*personGroups.size())>=SqlInsertTool.MAX_PACKET){
+                        actorAndDirectorSqlMapper.InsertGroups(personGroups);
+                        personGroups.clear();
+                    }
                 }
             }
             if(!personGroups.isEmpty()){
@@ -243,9 +262,10 @@ public class SqlInsertTool{
             return;
         }
         ActorAndDirectorSqlMapper sqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-        CorporationSqlMapper corporationSqlMapper=sqlSession.getMapper(CorporationSqlMapper.class);
+        PersonXmlSqlMapper personXmlSqlMapper =sqlSession.getMapper(PersonXmlSqlMapper.class);
         personList=sqlMapper.GetPersonIds(personList);
         List<Corporation> corporations=new LinkedList<>();
+        int tmp_count=0;
         for(int i=0;i<personList.size();++i){
             Person p1=new Person(PersonType.ACTOR);
             p1.setName(personList.get(i).getName());
@@ -258,9 +278,18 @@ public class SqlInsertTool{
                 p2.setId(personList.get(j).getId());
                 Corporation corporation=new Corporation(p1,p2);
                 corporations.add(corporation);
+                ++tmp_count;
+            }
+            if(tmp_count>=SqlInsertTool.MAX_GROUP_NUM){
+                personXmlSqlMapper.InsertActorCorporations(corporations);
+                corporations.clear();
+                tmp_count=0;
             }
         }
-        corporationSqlMapper.InsertActorCorporations(corporations);
+        if(tmp_count>0){
+            personXmlSqlMapper.InsertActorCorporations(corporations);
+        }
+
     }
 
     private void InsertActorAndDirectorCorporation(SqlSession sqlSession,Movie movie){
@@ -276,10 +305,11 @@ public class SqlInsertTool{
 
 
         ActorAndDirectorSqlMapper sqlMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-        CorporationSqlMapper corporationSqlMapper=sqlSession.getMapper(CorporationSqlMapper.class);
+        PersonXmlSqlMapper personXmlSqlMapper =sqlSession.getMapper(PersonXmlSqlMapper.class);
         actorList=sqlMapper.GetPersonIds(actorList);
         directorList=sqlMapper.GetPersonIds(directorList);
         List<Corporation> corporations=new ArrayList<>();
+        int tmp_count=0;
         for(int i=0;i<actorList.size();++i){
             Person p1=new Person(PersonType.ACTOR);
             p1.setName(actorList.get(i).getName());
@@ -292,9 +322,17 @@ public class SqlInsertTool{
                 p2.setMovies(movie.getTitle());
                 Corporation corporation=new Corporation(p1,p2);
                 corporations.add(corporation);
+                ++tmp_count;
+            }
+            if(tmp_count>=SqlInsertTool.MAX_GROUP_NUM){
+                personXmlSqlMapper.InsertActorDirectorCorporations(corporations);
+                corporations.clear();
+                tmp_count=0;
             }
         }
-        corporationSqlMapper.InsertActorDirectorCorporations(corporations);
+        if(tmp_count>0){
+            personXmlSqlMapper.InsertActorDirectorCorporations(corporations);
+        }
     }
 
     private List<Integer> InsertPersons(SqlSession sqlSession,List<Person> personList){
@@ -303,37 +341,37 @@ public class SqlInsertTool{
         }
         List<Integer> result=new ArrayList<>();
         ActorAndDirectorSqlMapper personMapper=sqlSession.getMapper(ActorAndDirectorSqlMapper.class);
-        List<Person> ids=personMapper.GetPersonIds(personList);
-        Set<String> contain_ids=new HashSet<>();
-        for(Person person:ids){
-            result.add(person.getId());
-            contain_ids.add(person.getName().toLowerCase());
+        PersonXmlSqlMapper personXmlSqlMapper=sqlSession.getMapper(PersonXmlSqlMapper.class);
+        List<Person> update_ids=personMapper.GetPersonIds(personList);
+        Set<Person> contain_ids=new TreeSet<>();
+        for(Person person:update_ids){
+            contain_ids.add(person);
             person.setMovies(personList.get(0).getMovies());
+            person.setType(personList.get(0).getType());
         }
         List<Person> insert_ids=new ArrayList<>();
-        List<Person> update_ids=new ArrayList<>();
         for(Person person:personList){
-            if(!contain_ids.contains(person.getName().toLowerCase())){
+            if(!contain_ids.contains(person)){
                 insert_ids.add(person);
-            }else{
-                update_ids.add(person);
             }
         }
         if(!insert_ids.isEmpty()){
-            personMapper.InsertPersons(insert_ids);
+            //personMapper.InsertPersons(insert_ids);
+            personXmlSqlMapper.InsertPersonsNotExists(insert_ids);
         }
         if(!update_ids.isEmpty()){
             personMapper.UpdatePersons(update_ids);
         }
-        for(Person person:insert_ids){
+        List<Person> result_persons=personMapper.GetPersonIds(personList);
+        for(Person person:result_persons){
             result.add(person.getId());
         }
         return result;
     }
-    private static List<Person> FilterDuplicatePerson(List<Person> personList){
-        Set<Person> set=new TreeSet<>();
-        List<Person> result=new ArrayList<>();
-        for(Person i:personList){
+    private static<T> List<T> FilterDuplicateValue(List<T> personList){
+        Set<T> set=new TreeSet<>();
+        List<T> result=new ArrayList<>();
+        for(T i:personList){
             if(set.contains(i)){
                 continue;
             }else{
@@ -350,7 +388,7 @@ public class SqlInsertTool{
             person.setName(i);
             personList.add(person);
         }
-        personList=SqlInsertTool.FilterDuplicatePerson(personList);
-        return FilterDuplicatePerson(personList);
+        personList=SqlInsertTool.FilterDuplicateValue(personList);
+        return FilterDuplicateValue(personList);
     }
 }

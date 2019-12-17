@@ -12,6 +12,10 @@ public class ProductGroup {
         return product_group_id;
     }
 
+    public void setProduct_group_id(Integer product_group_id) {
+        this.product_group_id = product_group_id;
+    }
+
     public Integer getProduct_id() {
         return product_id;
     }

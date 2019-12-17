@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.tongji.zhou.Mapper.CorporationSqlMapper">
+<mapper namespace="com.tongji.zhou.Mapper.PersonXmlSqlMapper">
     <insert id="InsertActorCorporations" parameterType="java.util.List">
         insert into actor_corporation(actor_name1,actor_name2,actor_id1,actor_id2,count,movies)
         values
@@ -25,5 +25,17 @@
         ON DUPLICATE KEY UPDATE
         count=count+1,
         movies=CONCAT(movies,SUBSTRING_INDEX(VALUES(movies),'|',-2))
+    </insert>
+
+    <insert id="InsertPersonsNotExists" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into ${list[0].role}(name,${list[0].group}_movies,${list[0].group}_count)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.name},CONCAT('|',#{item.movies},'|'),1
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        name=name
     </insert>
 </mapper>

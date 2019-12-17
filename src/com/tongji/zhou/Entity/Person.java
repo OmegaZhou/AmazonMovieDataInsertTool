@@ -1,5 +1,7 @@
 package com.tongji.zhou.Entity;
 
+import java.text.Collator;
+import java.text.RuleBasedCollator;
 import java.util.*;
 
 public class Person implements Comparable<Person> {
@@ -8,6 +10,14 @@ public class Person implements Comparable<Person> {
     private PersonType type;
     private String name;
     private String movies;
+
+    public PersonType getType() {
+        return type;
+    }
+
+    public void setType(PersonType type) {
+        this.type = type;
+    }
 
     public String getMovies() {
         return movies;
@@ -49,7 +59,9 @@ public class Person implements Comparable<Person> {
 
     @Override
     public int compareTo(Person obj) {
-        return this.name.toLowerCase().compareTo(obj.name.toLowerCase());
+        Collator collator=Collator.getInstance();
+        collator.setStrength(Collator.PRIMARY);
+        return collator.compare(this.getName(),obj.getName());
     }
 
 }

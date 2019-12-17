@@ -1,86 +1,48 @@
 package com.tongji.zhou;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.JSONReader;
 import com.tongji.zhou.Entity.Movie;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.List;
 
 public class MovieFileReader implements Iterator<Movie>,AutoCloseable {
-    private FileInputStream is;
-    private Movie temp;
+    private JSONReader reader;
+    private List<Movie> movies;
+    private int count=0;
     MovieFileReader(String str){
         try{
-            is=new FileInputStream(new File(str));
+            reader=new JSONReader(new FileReader(new File(str)));
+            reader.startArray();
         }catch (Exception e){
             ErrorHandler.error(e);
-            is=null;
         }
     }
 
     @Override
     public boolean hasNext() {
-        if(temp!=null){
+        /*if(temp!=null){
             return true;
         }
         temp=next();
         if(temp!=null){
             return true;
         }
-        return false;
+        return false;*/
+        return reader.hasNext();
     }
 
     @Override
     public Movie next() {
-        if(temp!=null){
-            Movie re=temp;
-            temp=null;
-            return re;
-        }else{
-            if(is!=null){
-                int count=0;
-                int read_re;
-                char ch;
-                try{
-                    StringBuilder stringBuilder=new StringBuilder();
-                    do{
-                        read_re=is.read();
-                    }while(read_re!=-1&&(char)read_re!='{');
-                    if(read_re==-1){
-                        return null;
-                    }
-                    /*if((char)read_re!='{'){
-                        throw new Exception("格式错误");
-                    }*/
-                    do{
-                        ch=(char)read_re;
-                        if(ch=='{'){
-                            count++;
-                        }
-                        if(ch=='}'){
-                            count--;
-                        }
-                        if(count>0){
-                            read_re=is.read();
-                        }
-                        stringBuilder.append(ch);
-                    }while(count>0);
-                    if(count!=0){
-                        throw new Exception("格式错误");
-                    }
-                    String json_str=stringBuilder.toString();
-                    JSONObject json=JSONObject.parseObject(json_str);
-                    Movie movie=json.toJavaObject(Movie.class);
-                    return movie;
-                }catch (Exception e){
-                    ErrorHandler.error(e);
-                    return null;
-                }
-
-            }
-        }
-        return null;
+        return reader.readObject(Movie.class);
     }
 
     @Override
@@ -91,9 +53,8 @@ public class MovieFileReader implements Iterator<Movie>,AutoCloseable {
     @Override
     public void close() throws Exception {
         try{
-            if(is!=null){
-                is.close();
-            }
+            reader.endArray();
+            reader.close();
         }catch (Exception e){
             ErrorHandler.error(e);
         }
